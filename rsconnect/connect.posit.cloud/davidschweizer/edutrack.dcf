@@ -1,12 +1,12 @@
-name: rshiny_mutiplevariables
-title: RShiny_MutipleVariables
+name: edutrack
+title: Edutrack
 username: davidschweizer
 account: davidschweizer
 server: connect.posit.cloud
 hostUrl: https://api.connect.posit.cloud/v1
-appId: 019fa8db-277a-bd1d-8169-14dc729282cd
+appId: 01a08598-37f1-dfb9-8ebd-1973680846a0
 bundleId:
-url: https://connect.posit.cloud/davidschweizer/content/019fa8db-277a-bd1d-8169-14dc729282cd
+url: https://connect.posit.cloud/davidschweizer/content/01a08598-37f1-dfb9-8ebd-1973680846a0
 version: 1
 asMultiple: FALSE
 asStatic: FALSE

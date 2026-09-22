@@ -1,30 +1,6 @@
 # app.R
 # ---------------------------------------------------------------------------
-# World choropleth Shiny app: ggplot2 + ggiraph, with a yearly time control.
-#
-# Countries are shaded by factor scores read from example_scores.csv. The map
-# is a static ggplot rendered server-side, drawn in the Web Mercator
-# projection, with hover tooltips via ggiraph. The colour scale is fixed
-# across ALL years so a shade means the same score in every year.
-#
-# The controls are a Play button and one button per year.
-#
-# TWO-FILE SETUP (so `terra` never has to build on the server):
-#   1. Run build_map.R ONCE locally  ->  creates world_mercator.rds
-#   2. Deploy: app.R + example_scores.csv + world_mercator.rds
-# This app reads the pre-built .rds, so it needs only the light packages below.
-#
-# Run locally with:  shiny::runApp()
-#
-# Packages needed by THIS app (install once):
-#   install.packages(c("shiny", "shinyWidgets", "ggplot2", "ggiraph", "sf",
-#                       "dplyr", "readr"))
-# (rnaturalearth / rmapshaper are only needed by build_map.R, not here.)
-#
-# CSV format (example_scores.csv): iso3, year, then one column per variable.
-#   e.g. iso3, year, governance, gdp_index, life_satisfaction
-#   Each variable column becomes an option in the dropdown.
-# Keep example_scores.csv and world_mercator.rds next to app.R.
+# Shiny app developed for Edutrack. Click on "Run app" in the RStudio IDE to execute.
 # ---------------------------------------------------------------------------
 
 library(shiny)
@@ -40,19 +16,18 @@ library(readr)
 world <- readRDS("world_cache.rds")
 
 var_labels <- c(
- ftrack =  "Edutracking factor scores",
- length_unesco =  "Proportion diff. curriculum",
-age_oecd = "Age of first selection",
-  ntrack_oecd = "Educational Progr. / Age 15"
+  ftrack =  "educational tracking",
+  length_unesco =  "% tracked curriculum",
+  age_oecd = "age of first selection",
+  ntrack_oecd = "# edu. programs, age 15"
 )
 
 # Mapping: variable code -> short description
 var_desc <- c(
-  ftrack =  "Edutracking factor scores. Own Calculation.",
-  length_unesco =  "Proportion diff. curriculum",
-  age_oecd = "This is the age at which students are first separated or sorted into distinctly different school types, educational programs, or vocational streams.
-",
-  ntrack_oecd = "This is the number of school types or distinct education programmes available to 15-year-old students. "
+  ftrack =  "Factor score of educational tracking using principle component factor analysis, based on three indicators: age of first selection, number of educational programs, of tracked curriculum), mean of 0 and a standard deviation of 1 [own calculation]",
+  length_unesco =  "Percentage of the total curriculum that is tracked [Source: UNESCO/OECD]",
+  age_oecd = "The age at which students are first sorted into different school types, educational programs, or vocational streams [Source: OECD/PISA]",
+  ntrack_oecd = "The number of educational programs available to 15-year-old students [Source: OECD/PISA]"
 )
 
 # ---- Data: read once from example_scores.csv ------------------------------
@@ -70,50 +45,59 @@ value_vars <- c("ftrack", "length_unesco", "age_oecd", "ntrack_oecd")
 all_years <- sort(unique(scores$year))   # for the year buttons
 
 # ---- UI -------------------------------------------------------------------
+# ---- UI -------------------------------------------------------------------
 ui <- page_fillable(
-  fillable_mobile = TRUE,
+  fillable_mobile = FALSE,   # let things stack at natural height on phones
   tags$head(tags$style(HTML(
-    ".sidebar-content { height: 100%; }
-   .selectize-input { font-size: 11px; }
-   .selectize-dropdown { font-size: 11px; }"
+    ".selectize-input { font-size: 13px; }
+     .selectize-dropdown { font-size: 13px; }
+     #var_description, #data_source { font-size: 12px; }
+     @media (min-width: 768px) {
+       #var_description, #data_source { font-size: 15px; }
+     }"
   ))),
   layout_sidebar(
-    
-  sidebar = sidebar(
-    width = "20%",
-    h4("EduTrack"),
-    #style = "display:flex; justify-content:center; margin-bottom:6px;",
-    selectInput(
-      "variable", "Variable",
-      choices = c(
-        "Edutracking factor scores" = "ftrack",
-        "Proportion diff. curriculum"  = "length_unesco",
-        "Age of first selection"        = "age_oecd",
-        "Educational Progr. / Age 15"        = "ntrack_oecd"
-      ),       # one entry per variable column in the CSV
-      selected = value_vars[1],
-      width    = "260px"
+    sidebar = sidebar(
+      width = 260,
+      open  = list(desktop = "open", mobile = "always-above"),
+      selectInput(
+        "variable", "Variable",
+        choices = c(
+          "educational tracking"    = "ftrack",
+          "% tracked curriculum"    = "length_unesco",
+          "age of first selection"  = "age_oecd",
+          "# edu. programs, age 15" = "ntrack_oecd"
+        ),
+        selected = value_vars[1],
+        width    = "100%"
+      ),
+      sliderTextInput(
+        "year", "Year",
+        choices  = all_years,
+        selected = 2012,
+        grid     = TRUE,
+        width    = "100%",
+        animate  = animationOptions(interval = 1500, loop = TRUE)
+      ),
+      div(
+        style = "text-align: justify; hyphens: auto;",
+        lang = "en",
+        textOutput("var_description", container = tags$div)
+      ),
+      div(
+        id = "data_source",
+        "EduTrack Data: ",
+        tags$a(
+          href   = "https://doi.org/10.34810/DATA3646",
+          target = "_blank",
+          "doi.org/10.34810/DATA3646"
+        )
+      )
     ),
-    # Dynamic description text
-    sliderTextInput(
-      "year", "Year",
-      choices  = all_years,          # only these years are selectable
-      selected = 2012,
-      grid     = TRUE,               # draw a tick for each year
-      width    = "80%",
-      animate  = animationOptions(interval = 1500, loop = TRUE)
-    ),
-    div(
-      style = "margin-top: auto; text-align: justify; hyphens: auto;",
-      lang = "en",
-      textOutput("var_description", container = tags$div)
-    )
-  ),
     girafeOutput("map", width = "100%")
-
-
+  )
 )
-)
+
 # ---- Server ---------------------------------------------------------------
 server <- function(input, output, session) {
   
@@ -172,9 +156,15 @@ server <- function(input, output, session) {
     )
     dat <- dplyr::left_join(world, yr_dat, by = "iso3")
     
+    # dat$tip <- sprintf(
+    #   "<b>%s</b><br/>%s (%d): %s",
+    #   dat$country_name, var, yr,
+    #   ifelse(is.na(dat$value), "no data", format(round(dat$value, 2)))
+    # )
+    
     dat$tip <- sprintf(
-      "<b>%s</b><br/>%s (%d): %s",
-      dat$country_name, var, yr,
+      "<b>%s</b><br/>%s",
+      dat$country_name,
       ifelse(is.na(dat$value), "no data", format(round(dat$value, 2)))
     )
     
@@ -195,10 +185,13 @@ server <- function(input, output, session) {
       guides(fill = guide_colorbar(
         barwidth = unit(11, "cm"), barheight = unit(0.4, "cm")
       )) +
+      labs(caption = "© PERGAP") +
       theme_void(base_size = 13) +
       theme(
         # plot.title = element_text(face = "bold", hjust = 0.5,
         #                           margin = margin(b = 6)),
+        plot.margin           = margin(0, 0, 0, 0),
+        legend.margin         = margin(t = 2, b = 0),
         legend.position       = "bottom",
         legend.title.position = "top",                 # title ABOVE the bar
         legend.title          = element_text(hjust = 0.5, size = 11)
