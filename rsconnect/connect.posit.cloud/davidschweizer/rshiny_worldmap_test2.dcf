@@ -1,0 +1,13 @@
+name: rshiny_worldmap_test2
+title: RShiny_worldmap_test
+username: davidschweizer
+account: davidschweizer
+server: connect.posit.cloud
+hostUrl: https://api.connect.posit.cloud/v1
+appId: 019fa854-e99d-04c3-ee7a-cc4ebd5581c3
+bundleId:
+url: https://connect.posit.cloud/davidschweizer/content/019fa854-e99d-04c3-ee7a-cc4ebd5581c3
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: example_scores.csv|test/app.R|world_simplified.rds|ggplot
